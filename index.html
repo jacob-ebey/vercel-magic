@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Vercel Golang Magic!</title>
+  </head>
+
+  <body id="home">
+    <h1>Vercel Golang Magic!</h1>
+
+    <p>
+      Login below for an example that then pings a Golang API route for your
+      user info. Once logged in, you can refresh the page and still have access
+      to your info.
+    </p>
+
+    <form onsubmit="return handleLogin()">
+      <input id="email" type="email" placeholder="jacob@example.com" />
+      <button type="submit">Login</button>
+      <p id="error"></p>
+    </form>
+
+    <button onclick="return handleLogout()">Logout</button>
+
+    <pre><code id="code"></code></pre>
+
+    <script src="https://unpkg.com/magic-sdk@2.4.8/dist/magic.js"></script>
+
+    <script>
+      function loadUserData() {
+        fetch("/api/user")
+          .then((r) => r.json())
+          .then((user) => {
+            document.getElementById("code").innerText = JSON.stringify(
+              user,
+              null,
+              2
+            );
+          });
+      }
+
+      loadUserData();
+    </script>
+
+    <script>
+      const m = new Magic("pk_test_3350815F4170513F");
+
+      const preload = m.preload().catch((e) => {
+        console.error(e);
+        document.getElementById("error").innerText =
+          "Error preloading magic sdk.";
+      });
+
+      function handleLogin() {
+        preload.then(() =>
+          m.auth
+            .loginWithMagicLink({
+              email: document.getElementById("email").value,
+            })
+            .then((did) =>
+              fetch("/api/login", {
+                method: "POST",
+                headers: {
+                  authorization: did,
+                },
+              })
+                .then(loadUserData)
+                .then(() => {
+                  document.getElementById("error").innerText = "";
+                })
+            )
+            .catch((err) => {
+              console.error(err);
+              document.getElementById("error").innerText =
+                "Error logging you in.";
+            })
+        );
+
+        return false;
+      }
+
+      function handleLogout() {
+        fetch("/api/logout", { method: "POST" }).then(loadUserData);
+      }
+    </script>
+  </body>
+</html>
